@@ -38,6 +38,10 @@ const profileSchema = new mongoose.Schema(
       type: String,
       max: 50,
     },
+    country: {
+      type: String,
+      max: 50,
+    },
     relationship: {
       type: String,
       enum: [
@@ -49,6 +53,9 @@ const profileSchema = new mongoose.Schema(
         "prefer not to say",
       ],
       defualt: "none",
+    },
+    birthday: {
+      type: Date,
     },
   },
   {

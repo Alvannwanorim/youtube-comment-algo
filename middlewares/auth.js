@@ -11,17 +11,24 @@ exports.auth = (req, res, next) => {
       message: "Anthentication denied, token not found",
     });
   }
-  //verify token
-  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+  try {
+    //verify token
+    const decoded = jwt.verify(token, process.env.TOKEN_KEY);
 
-  //return error if token is not valid
-  if (!decoded) {
-    return res.status(400).json({
-      statusCode: 400,
-      message: "Anthentication failed, User not authorized",
+    //return error if token is not valid
+    if (!decoded) {
+      return res.status(400).json({
+        statusCode: 400,
+        message: "Anthentication failed, User not authorized",
+      });
+    }
+    //assign token to request body
+    req.user = decoded.user;
+    next();
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "Authentication Failed, Experied Token",
     });
   }
-  //assign token to request body
-  req.user = decoded.user;
-  next();
 };

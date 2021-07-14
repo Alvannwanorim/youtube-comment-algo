@@ -4,16 +4,17 @@ const {
   followUser,
   unFollowUser,
   createProfile,
+  getUserProfile,
 } = require("../controllers/profileControllers");
 
 const { auth } = require("../middlewares/auth");
 const router = express.Router();
 
 //Create user profile
-route.post("/", auth, createProfile);
+router.post("/", auth, createProfile);
 
 // Get user profile
-router.get("/auth", getUserProfile);
+router.get("/profile", auth, getUserProfile);
 router.put("/follow/:id", auth, followUser);
 
 //unfollow user

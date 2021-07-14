@@ -15,7 +15,7 @@ router.post(
   "/register",
   [
     check("email", "email is requrired ").isEmail(),
-    check("username", "Please supply the username").exists(),
+    check("username", "Please supply the username").not().isEmpty(),
     check("password", "Password with minimum of six characters is required")
       .exists()
       .isLength({ min: 6 }),
@@ -30,6 +30,7 @@ router.post(
     check("password", "Password with minimum of six characters is required")
       .exists()
       .isLength({ min: 6 }),
+    check("email", "email is required").not().isEmpty(),
   ],
   loginUser
 );

@@ -8,14 +8,14 @@ const User = require("../models/userModels");
 exports.createProfile = async (req, res) => {
   const userId = req.user.id;
   try {
-    const exitingUser = await User.findById(userId);
-    if (!exitingUser) {
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
       return res.status(404).json({
         statusCode: 404,
         message: "User not found",
       });
     }
-    const { desc, coverPicture, town, city, relationship } = req.body;
+    const { desc, coverPicture, town, city, relationship, country } = req.body;
 
     const userProfile = new Profile({
       user: existingUser._id,
@@ -23,6 +23,7 @@ exports.createProfile = async (req, res) => {
       desc,
       town,
       city,
+      country,
       relationship,
     });
 
@@ -55,6 +56,7 @@ exports.getUserProfile = async (req, res) => {
         user: profile,
       });
     }
+    res.status(200).json(profile);
   } catch (err) {
     console.log(err);
     res.status(500).json({
@@ -88,7 +90,7 @@ exports.updateProfile = async (req, res) => {
     userProfile.relationship =
       req.body.relationship || userProfile.relationship;
 
-    const userProfile = await user.save();
+    await userProfile.save();
 
     res.status(201).json({
       statusCode: 201,
@@ -114,10 +116,12 @@ exports.followUser = async (req, res) => {
     if (!requestToFollow) {
       return res.status(404).json({
         statusCode: 404,
-        message: "User not found",
+        message: "User not found 1",
       });
     }
+    // console.log(requestToFollow);
     //get user to be followed
+    // console.log(req.params.id);
     const userToFollow = await Profile.findOne({ user: req.params.id });
 
     ///return error message if user is not found
@@ -129,18 +133,21 @@ exports.followUser = async (req, res) => {
     }
 
     //check if request user if the same as theuser to be followed
-    if (userId === userToFollow.user.toString()) {
+    if (userId === userToFollow.user) {
       return res.status(400).json({
         statusCode: 400,
         message: "You can not follow yourself",
       });
     }
     //check if user is already being followed by request user
+    // console.log(userToFollow);
     const followedByUser = userToFollow.followers.find(
-      (follower) => follower.user.toString() === userId
+      (follower) => follower._id.toString() === userId
     );
 
     //return error message is user is already followed
+    console.log(followedByUser);
+
     if (followedByUser) {
       return res.status(400).json({
         statusCode: 400,

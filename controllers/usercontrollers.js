@@ -9,7 +9,7 @@ const { validationResult } = require("express-validator");
 
 exports.registerUser = async (req, res) => {
   const { username, email, password } = req.body;
-  const result = validationResult();
+  const result = validationResult(req);
 
   if (!result.isEmpty()) {
     return res.status(400).json({
@@ -25,7 +25,7 @@ exports.registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         statusCode: 400,
-        message: "",
+        message: "User already exists",
       });
     }
 
@@ -98,10 +98,7 @@ exports.loginUser = async (req, res) => {
 
     res.status(200).json({
       statusCode: 200,
-      user: {
-        username: user.username,
-        email: user.email,
-      },
+      user,
       token,
     });
   } catch (err) {

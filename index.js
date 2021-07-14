@@ -5,6 +5,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./db");
 const userRouter = require("./routes/userRoutes");
+const profileRouter = require("./routes/profileRoutes");
 dotenv.config();
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
 
 // User routes
 app.use("/api/users/auth", userRouter);
+app.use("/api/users", profileRouter);
 //connect to Database
 connectDB();
 
