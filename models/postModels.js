@@ -6,7 +6,7 @@ const postSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    description: {
+    text: {
       type: String,
       max: 2000,
     },
@@ -17,6 +17,14 @@ const postSchema = new mongoose.Schema(
       type: Object,
     },
     likes: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      },
+    ],
+    dislikes: [
       {
         user: {
           type: mongoose.Schema.Types.ObjectId,

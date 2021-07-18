@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./db");
 const userRouter = require("./routes/userRoutes");
 const profileRouter = require("./routes/profileRoutes");
+const postRouter = require("./routes/postRoutes");
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 // User routes
 app.use("/api/users/auth", userRouter);
 app.use("/api/users", profileRouter);
+app.use("/api/users/posts", postRouter);
 //connect to Database
 connectDB();
 

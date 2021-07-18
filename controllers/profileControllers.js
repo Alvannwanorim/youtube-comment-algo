@@ -181,7 +181,7 @@ exports.unFollowUser = async (req, res) => {
 
   try {
     // get user wiht follow request
-    const requestToUnFollow = await Profile.findOne(userId);
+    const requestToUnFollow = await Profile.findOne({ user: userId });
 
     //return eror if user is not found
     if (!requestToUnFollow) {
@@ -191,7 +191,7 @@ exports.unFollowUser = async (req, res) => {
       });
     }
     //get user to be followed
-    const userToUnFollow = await Profile.findOne(req.params.id);
+    const userToUnFollow = await Profile.findOne({ user: req.params.id });
 
     ///return error message if ur is not found
     if (!userToUnFollow) {
@@ -210,35 +210,40 @@ exports.unFollowUser = async (req, res) => {
     }
     //check if user is already being followed by request user
     const followedByUser = userToUnFollow.followers.find(
-      (follower) => follower.user.toString() === userId
+      (follower) => follower._id.toString() === userId
+    );
+    const followedingByUser = requestToUnFollow.followings.find(
+      (following) => following._id.toString() === req.params.id
     );
 
     //return error message is user is already followed
-    if (!followedByUser) {
+    if (followedByUser && followedingByUser) {
+      const removeFollower = userToUnFollow.followers
+        .map((follower) => follower._id.toString())
+        .indexOf(userId);
+
+      userToUnFollow.followers.splice(removeFollower, 1);
+
+      const removeFollowing = requestToUnFollow.followings
+        .map((user) => user._id.toString())
+        .indexOf(req.params.id);
+      // console.log(removeFollowing);
+
+      requestToUnFollow.followings.splice(removeFollowing, 1);
+
+      await userToUnFollow.save();
+      await requestToUnFollow.save();
+
+      res.status(200).json({
+        statusCode: 200,
+        message: "User unfollowed successfully",
+      });
+    } else {
       return res.status(400).json({
         statusCode: 400,
         message: "You are not following this user",
       });
     }
-    const removeFollower = userToUnFollow.followers
-      .map((follower) => follower.user.toString())
-      .indexOf(userId);
-
-    userToUnFollow.followers.splice(removeFollower, 1);
-
-    const removeFollowing = requestToUnFollow.followers
-      .map((user) => user.toString())
-      .indexOf(userId);
-
-    requestToUnFollow.following.splice(removeFollowing, 1);
-
-    await userToUnFollow.save();
-    await requestToUnFollow.save();
-
-    res.status(200).json({
-      statusCode: 200,
-      message: "User unfollowed successfully",
-    });
 
     //check and return server error
   } catch (err) {
