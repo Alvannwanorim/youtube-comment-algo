@@ -40,4 +40,10 @@ router.post(
   replyCommentonComment
 );
 
+router.put(
+  "/:post_id/comments/:comment_id/comment/:single_id/like/:reply_id",
+  auth,
+  likeCommentonComment
+);
+
 module.exports = router;

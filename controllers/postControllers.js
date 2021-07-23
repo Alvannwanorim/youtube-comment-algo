@@ -122,6 +122,48 @@ exports.likePost = async (req, res) => {
     });
   }
 };
+//TODO: DISLIKE A POST
+//@desc: DISLIKE POST
+//@route PUT: /api/posts/:post_id/dislikes
+//@access Private
+exports.dislikePost = async (req, res) => {
+  const post_id = req.params.post_id;
+  const user_id = req.user.id;
+
+  try {
+    const post = await Post.findById(post_id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found",
+      });
+    }
+    const user = await User.findById(user_id);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const likedPost = post.likes.find(
+      (like) => like._id.toString() === user_id
+    );
+    if (likedPost) {
+      return res.status(400).json({
+        message: "Post already liked by User",
+      });
+    }
+    post.likes.push(user_id);
+
+    await post.save();
+    res.status(201).json(post);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "server error",
+    });
+  }
+};
 
 //@desc: COMMENT ON A  POST
 //@route PUT: /api/posts/:post_id/comment
@@ -145,7 +187,7 @@ exports.commentPost = async (req, res) => {
       userComments.comments.push(newComment);
       await userComments.save();
 
-      post.comments = userComments.comments.length;
+      post.comments++;
       await post.save();
       return res.json({ Commnets: userComments });
     } else {
@@ -155,7 +197,7 @@ exports.commentPost = async (req, res) => {
       });
       await createdComment.save();
 
-      post.comments = createdComment.comments.length;
+      post.comments++;
       await post.save();
       res.status(201).json(createdComment);
     }
@@ -200,6 +242,39 @@ exports.getPostComments = async (req, res) => {
   }
 };
 
+//TODO: DELETE POST
+
+//@desc: LIKE COMMENT
+//@route PUT: /api/posts/:post_id/comment/:comment_id
+//@access Private
+exports.deletePost = async (req, res) => {
+  const { post_id } = req.params;
+
+  try {
+    const post = Post.findById(post_id);
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found",
+      });
+    }
+
+    const postComments = Comments.findOne({ post: post_id });
+
+    if (postComments) {
+      await postComments.remove();
+    }
+
+    await post.remove();
+    re.status(201).json({
+      message: "Post and post comments removed suscessfully",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "server error",
+    });
+  }
+};
 //@desc: LIKE COMMENT
 //@route PUT: /api/posts/:post_id/comment/:comment_id
 //@access Private
@@ -291,6 +366,9 @@ exports.commentOnComment = async (req, res) => {
     userComment.comment.unshift(newComment);
 
     await postComments.save();
+
+    post.comments++;
+    await post.save();
     res.status(200).json({
       comments: postComments,
     });
@@ -416,6 +494,10 @@ exports.replyCommentonComment = async (req, res) => {
     singleComment.reply.push(newReply);
 
     await postComments.save();
+
+    post.comments++;
+    await post.save();
+
     res.status(200).json({
       comments: postComments,
     });
@@ -428,12 +510,13 @@ exports.replyCommentonComment = async (req, res) => {
 };
 
 //@desc: LIKE REPLY COMMENT ON COMMENT
-//@route PUT: /api/posts/:post_id/comment/:comment_id/:single_id/reply/reply_id
+//@route PUT: /api/posts/:post_id/comment/:comment_id/:single_id/like/reply_id
 //@access Private
 exports.likeReplyCommentonComment = async (req, res) => {
   const { comment_id } = req.params;
   const { post_id } = req.params;
-  const { single_id } = req.params;
+  const { single_id } = req.parazms;
+  const { reply_id } = req.parazms;
 
   try {
     const post = await Post.findById(post_id);
@@ -469,13 +552,21 @@ exports.likeReplyCommentonComment = async (req, res) => {
         message: "This comment does not exist",
       });
     }
+    const reply = getValue(singleComment, reply_id);
+    if (!reply)
+      return res.status(404).json({
+        message: "This reply was not found",
+      });
 
-    const newReply = {};
-    newReply.text = req.body.text;
-    newReply.user = req.user.id;
-    newReply.replyTo = req.params.user_id;
-
-    singleComment.reply.push(newReply);
+    const likedComment = reply.likes.find(
+      (like) => like._id.toString() === req.user.id
+    );
+    if (likedComment) {
+      return res.status(400).json({
+        message: "Comment already liked by user",
+      });
+    }
+    reply.likes.push(req.user.id);
 
     await postComments.save();
     res.status(200).json({
