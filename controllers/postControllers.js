@@ -103,12 +103,28 @@ exports.likePost = async (req, res) => {
       });
     }
 
+    const dislikedPost = post.dislikes.find(
+      (dislike) => dislike._id.toString() === user_id
+    );
+    if (dislikedPost) {
+      const likeIndex = post.dislikes
+        .map((dislike) => dislike._id.toString() === user_id)
+        .indexOf(user_id);
+
+      post.dislikes.splice(likeIndex, 1);
+
+      post.likes.push(user_id);
+      await post.save();
+      return res.status(201).json(post);
+    }
+
     const likedPost = post.likes.find(
       (like) => like._id.toString() === user_id
     );
+
     if (likedPost) {
       return res.status(400).json({
-        message: "Post already liked by User",
+        message: "Post already liked by user",
       });
     }
     post.likes.push(user_id);
@@ -122,6 +138,7 @@ exports.likePost = async (req, res) => {
     });
   }
 };
+
 //TODO: DISLIKE A POST
 //@desc: DISLIKE POST
 //@route PUT: /api/posts/:post_id/dislikes
@@ -149,11 +166,27 @@ exports.dislikePost = async (req, res) => {
       (like) => like._id.toString() === user_id
     );
     if (likedPost) {
+      const likeIndex = post.likes
+        .map((like) => like._id.toString() === user_id)
+        .indexOf(user_id);
+
+      post.like.splice(likeIndex, 1);
+
+      post.dislikes.push(user_id);
+      await post.save();
+      return res.status(201).json(post);
+    }
+
+    const disLikedPost = post.dislikes.find(
+      (like) => like._id.toString() === user_id
+    );
+
+    if (disLikedPost) {
       return res.status(400).json({
-        message: "Post already liked by User",
+        message: "Post already disliked by user",
       });
     }
-    post.likes.push(user_id);
+    post.dislikes.push(user_id);
 
     await post.save();
     res.status(201).json(post);
@@ -165,7 +198,6 @@ exports.dislikePost = async (req, res) => {
   }
 };
 
-//@desc: COMMENT ON A  POST
 //@route PUT: /api/posts/:post_id/comment
 //@access Private
 
@@ -275,6 +307,7 @@ exports.deletePost = async (req, res) => {
     });
   }
 };
+
 //@desc: LIKE COMMENT
 //@route PUT: /api/posts/:post_id/comment/:comment_id
 //@access Private
@@ -307,6 +340,21 @@ exports.likeComment = async (req, res) => {
     if (!userComment) {
       restart;
     }
+
+    const dislikedPost = userComment.dislikes.find(
+      (dislike) => dislike._id.toString() === user_id
+    );
+    if (dislikedPost) {
+      const dislikeIndex = userComment.dislikes
+        .map((dislike) => dislike._id.toString() === user_id)
+        .indexOf(user_id);
+
+      userComment.dislikes.splice(dislikeIndex, 1);
+
+      userComment.likes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
     const likedComment = userComment.likes.find(
       (like) => like._id.toString() === req.user.id
     );
@@ -320,6 +368,75 @@ exports.likeComment = async (req, res) => {
     await postComments.save();
     res.status(200).json({
       message: "comment like successful",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "server error",
+    });
+  }
+};
+
+//@desc: LIKE COMMENT
+//@route PUT: /api/posts/:post_id/comment/:comment_id
+//@access Private
+exports.dislikeComment = async (req, res) => {
+  const { comment_id } = req.params;
+
+  try {
+    const post = await Post.findById(req.params.post_id);
+
+    if (!post) {
+      return re.status(404).json({
+        message: "This post does not exist",
+      });
+    }
+    // console.log(req.params.comment_id);
+
+    const postComments = await Comments.findOne({ post: req.params.post_id });
+    if (!postComments) {
+      return res
+        .status(404)
+        .json({ message: "No comments were found for this post" });
+    }
+
+    const { comments } = postComments;
+    // console.log(comment_id);
+
+    const userComment = getValue(comments, comment_id);
+
+    // console.log(userComment);
+    if (!userComment) {
+      restart;
+    }
+
+    const likedPost = userComment.likes.find(
+      (like) => like._id.toString() === user_id
+    );
+    if (likedPost) {
+      const likeIndex = userComment.likes
+        .map((like) => like._id.toString() === user_id)
+        .indexOf(user_id);
+
+      userComment.likes.splice(likeIndex, 1);
+
+      userComment.dislikes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
+    const dislikedComment = userComment.dislikes.find(
+      (dislike) => dislike._id.toString() === req.user.id
+    );
+
+    if (dislikedComment) {
+      return res.status(400).json({
+        message: "Comment already disliked by User",
+      });
+    }
+    userComment.dislikes.push(req.user.id);
+    await postComments.save();
+    res.status(200).json({
+      message: "comment dislike successful",
     });
   } catch (err) {
     console.log(err);
@@ -421,6 +538,22 @@ exports.likeCommentonComment = async (req, res) => {
         message: "This comment does not exist",
       });
     }
+
+    const dislikedPost = singleComment.dislikes.find(
+      (dislike) => dislike._id.toString() === user_id
+    );
+    if (dislikedPost) {
+      const dislikeIndex = singleComment.dislikes
+        .map((dislike) => dislike._id.toString() === user_id)
+        .indexOf(user_id);
+
+      singleComment.dislikes.splice(dislikeIndex, 1);
+
+      singleComment.likes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
+
     const likedComment = singleComment.likes.find(
       (like) => like._id.toString() === req.user.id
     );
@@ -430,6 +563,84 @@ exports.likeCommentonComment = async (req, res) => {
       });
     }
     singleComment.likes.push(req.user.id);
+
+    await postComments.save();
+    res.status(200).json({
+      comments: postComments,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "server error",
+    });
+  }
+};
+//@desc: DISLIKE COMMENT ON COMMENT
+//@route PUT: /api/posts/:post_id/comment/:comment_id/:single_id/dislike
+//@access Private
+exports.dislikeCommentonComment = async (req, res) => {
+  const { comment_id } = req.params;
+  const { post_id } = req.params;
+  const { single_id } = req.params;
+
+  try {
+    const post = await Post.findById(post_id);
+
+    if (!post) {
+      return re.status(404).json({
+        message: "This post does not exist",
+      });
+    }
+    // console.log(req.params.comment_id);
+
+    const postComments = await Comments.findOne({ post: post_id });
+    if (!postComments) {
+      return res
+        .status(404)
+        .json({ message: "No comments were found for this post" });
+    }
+
+    const { comments } = postComments;
+    // console.log(comment_id);
+
+    const userComment = getValue(comments, comment_id);
+
+    // console.log(userComment);
+    const { comment } = userComment;
+
+    const singleComment = comment.find(
+      (single) => single._id.toString() === single_id
+    );
+    if (!singleComment) {
+      return res.status(404).json({
+        message: "This comment does not exist",
+      });
+    }
+
+    const likedPost = singleComment.likes.find(
+      (like) => like._id.toString() === user_id
+    );
+    if (likedPost) {
+      const likeIndex = singleComment.likes
+        .map((like) => like._id.toString() === user_id)
+        .indexOf(user_id);
+
+      singleComment.likes.splice(likeIndex, 1);
+
+      singleComment.dislikes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
+
+    const dislikedComment = singleComment.dislikes.find(
+      (dislike) => dislike._id.toString() === req.user.id
+    );
+    if (dislikedComment) {
+      return res.status(400).json({
+        message: "Comment already liked by user",
+      });
+    }
+    singleComment.dislikes.push(req.user.id);
 
     await postComments.save();
     res.status(200).json({
@@ -558,6 +769,20 @@ exports.likeReplyCommentonComment = async (req, res) => {
         message: "This reply was not found",
       });
 
+    const dislikedPost = reply.dislikes.find(
+      (dislike) => dislike._id.toString() === user_id
+    );
+    if (dislikedPost) {
+      const dislikeIndex = reply.dislikes
+        .map((dislike) => dislike._id.toString() === user_id)
+        .indexOf(user_id);
+
+      reply.dislikes.splice(dislikeIndex, 1);
+
+      reply.likes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
     const likedComment = reply.likes.find(
       (like) => like._id.toString() === req.user.id
     );
@@ -567,6 +792,91 @@ exports.likeReplyCommentonComment = async (req, res) => {
       });
     }
     reply.likes.push(req.user.id);
+
+    await postComments.save();
+    res.status(200).json({
+      comments: postComments,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "server error",
+    });
+  }
+};
+
+//@desc: DISLIKE REPLY COMMENT ON COMMENT
+//@route PUT: /api/posts/:post_id/comment/:comment_id/:single_id/dislike/reply_id
+//@access Private
+exports.dislikeReplyCommentonComment = async (req, res) => {
+  const { comment_id } = req.params;
+  const { post_id } = req.params;
+  const { single_id } = req.parazms;
+  const { reply_id } = req.parazms;
+
+  try {
+    const post = await Post.findById(post_id);
+
+    if (!post) {
+      return re.status(404).json({
+        message: "This post does not exist",
+      });
+    }
+    // console.log(req.params.comment_id);
+
+    const postComments = await Comments.findOne({ post: post_id });
+    if (!postComments) {
+      return res
+        .status(404)
+        .json({ message: "No comments were found for this post" });
+    }
+
+    const { comments } = postComments;
+    // console.log(comment_id);
+
+    const userComment = getValue(comments, comment_id);
+
+    // console.log(userComment);
+    const { comment } = userComment;
+
+    const singleComment = comment.find(
+      (single) => single._id.toString() === single_id
+    );
+
+    if (!singleComment) {
+      return res.status(404).json({
+        message: "This comment does not exist",
+      });
+    }
+    const reply = getValue(singleComment, reply_id);
+    if (!reply)
+      return res.status(404).json({
+        message: "This reply was not found",
+      });
+
+    const likedPost = reply.likes.find(
+      (like) => like._id.toString() === user_id
+    );
+    if (likedPost) {
+      const likeIndex = reply.likes
+        .map((like) => like._id.toString() === user_id)
+        .indexOf(user_id);
+
+      reply.likes.splice(likeIndex, 1);
+
+      reply.dislikes.push(user_id);
+      await postComments.save();
+      return res.status(201).json(postComments);
+    }
+    const dislikedComment = reply.dislikes.find(
+      (dislike) => dislike._id.toString() === req.user.id
+    );
+    if (dislikedComment) {
+      return res.status(400).json({
+        message: "Comment already liked by user",
+      });
+    }
+    reply.dislikes.push(req.user.id);
 
     await postComments.save();
     res.status(200).json({
